@@ -6,6 +6,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 version = 0.2
 listening = True
+MAX_FILE_SIZE = 8192
 
 class HTTPException (Exception) :
     pass
@@ -26,7 +27,7 @@ def openFile (fileName) :
 
 def getRequest (socket) :
 	# receive the request
-	request = socket.recv(2048)
+	request = socket.recv(MAX_FILE_SIZE)
 	request = bytes.decode(request)
 	return request
 
@@ -44,7 +45,6 @@ def parseRequest (request) :
 		parts[1] = path + parts[1]
 	else :
 		parts[1] = path + '/' + parts[1]
-	print(parts[1])
 	details['file'] = parts[1]
 	details['http'] = parts[2]
 
@@ -54,6 +54,9 @@ def parseRequest (request) :
 def getContent (details) :
 	# process the request
 	content = openFile(details['file'])
+	return content
+
+def getResponse (content) :
 	return content
 
 def returnResponse (response, socket) :
@@ -69,9 +72,11 @@ def listen () :
 
 		try :
 
-			details = parseRequest(request)
+			requestDetails = parseRequest(request)
 
-			response = getContent(details)
+			content = getContent(requestDetails)
+
+			response = getResponse(content)
 
 			returnResponse(response, clientSocket)
 
