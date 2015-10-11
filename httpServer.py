@@ -10,40 +10,44 @@ def getPort () :
 		exit()
 	return int(argv[1])
 
-def request () :
+def getRequest (socket) :
 	# receive the request
-	request = client.recv(2048)
+	request = socket.recv(2048)
 	print(request)
 	return request
 
-def process (request) :
+def processRequest (request) :
 	# process the request
 	content = request.upper()
 	return content
 
-def respond (response) :
+def returnResponse (response, socket) :
 	# return the result to the client
-	client.send(response)
+	socket.send(response)
 
 def listen () :
 	while listening:
 		# accept the connection to a client
-		client, addr = socket.accept()
+		clientSocket, addr = serverSocket.accept()
 
-		respond(process(request()))
+		request = getRequest(clientSocket)
+
+		response = processRequest(request)
+
+		returnResponse(response, clientSocket)
 
 		#close the connection
-		client.close()
+		clientSocket.close()
 
 print('http server v' + str(version))
 
 # define port number and socket
 port = getPort()
-socket = socket(AF_INET, SOCK_STREAM)
+serverSocket = socket(AF_INET, SOCK_STREAM)
 
 # activate socket
-socket.bind(('localhost', port))
-socket.listen(1)
+serverSocket.bind(('localhost', port))
+serverSocket.listen(1)
 
 listen()
 
