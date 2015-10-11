@@ -1,7 +1,7 @@
 from socket	import *
 from sys import argv, exit
 
-version = 0.1
+version = 0.2
 listening = True
 
 def getPort () :
@@ -21,17 +21,47 @@ def openFile (fileName) :
 def getRequest (socket) :
 	# receive the request
 	request = socket.recv(2048)
-	print(request)
+	request = bytes.decode(request)
 	return request
 
 def parseRequest (request) :
-	# get/post
-	# file
-	pass
+	# dictionary to hold values
+	details = {}
+	# list of lines in request
+	lines = request.split('\r\n')
+	# components of line
+	parts = lines[0].split(' ')
+	details['type'] = parts[0].upper()
+	details['file'] = parts[1]
+	details['http'] = parts[2]
 
-def getContent (request) :
+	# parts = lines[1].split(' ')
+	# details['host'] = parts[1]
+
+	# parts = lines[2].split(' ')
+	# details['connection'] = parts[1]
+
+	# parts = lines[3].split(' ')
+	# details['accept'] = parts[1]
+
+	# parts = lines[4].split(' ')
+	# details['upgrade'] = parts[1]
+
+	# parts = lines[5].split(' ')
+	# details['agent'] = parts[1]
+
+	# parts = lines[6].split(' ')
+	# details['encoding'] = parts[1]
+
+	# parts = lines[7].split(' ')
+	# details['language'] = parts[1]
+
+	print(details['type'] + ' ' + details['file'])
+	return details
+
+def getContent (details) :
 	# process the request
-	content = openFile(request)
+	content = openFile(details['file'])
 	return content
 
 def returnResponse (response, socket) :
@@ -45,7 +75,9 @@ def listen () :
 
 		request = getRequest(clientSocket)
 
-		response = getContent(request)
+		details = parseRequest(request)
+
+		response = getContent(details)
 
 		returnResponse(response, clientSocket)
 
