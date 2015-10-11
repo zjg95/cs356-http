@@ -10,20 +10,30 @@ def getPort () :
 		exit()
 	return int(argv[1])
 
+def openFile (fileName) :
+	try:
+		inputfile = open (fileName, 'r')
+	except IOError:
+		return '404'
+	contents = inputfile.read()
+	return contents
+
 def getRequest (socket) :
 	# receive the request
 	request = socket.recv(2048)
+	if request[0] == 47 :
+		request = request[1:]
 	print(request)
 	return request
 
 def processRequest (request) :
 	# process the request
-	content = request.upper()
+	content = openFile(request)
 	return content
 
 def returnResponse (response, socket) :
 	# return the result to the client
-	socket.send(response)
+	socket.send(response.encode("ascii"))
 
 def listen () :
 	while listening:
