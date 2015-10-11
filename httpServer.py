@@ -1,8 +1,14 @@
 from socket	import *
 from sys import argv, exit
+import os
+
+path = os.path.dirname(os.path.abspath(__file__))
 
 version = 0.2
 listening = True
+
+class HTTPException (Exception) :
+    pass
 
 def getPort () :
 	if len(argv) != 2 :
@@ -32,29 +38,15 @@ def parseRequest (request) :
 	# components of line
 	parts = lines[0].split(' ')
 	details['type'] = parts[0].upper()
+	if details['type'] != "GET" :
+		raise HTTPException
+	if '/' == parts[1][0] :
+		parts[1] = path + parts[1]
+	else :
+		parts[1] = path + '/' + parts[1]
+	print(parts[1])
 	details['file'] = parts[1]
 	details['http'] = parts[2]
-
-	# parts = lines[1].split(' ')
-	# details['host'] = parts[1]
-
-	# parts = lines[2].split(' ')
-	# details['connection'] = parts[1]
-
-	# parts = lines[3].split(' ')
-	# details['accept'] = parts[1]
-
-	# parts = lines[4].split(' ')
-	# details['upgrade'] = parts[1]
-
-	# parts = lines[5].split(' ')
-	# details['agent'] = parts[1]
-
-	# parts = lines[6].split(' ')
-	# details['encoding'] = parts[1]
-
-	# parts = lines[7].split(' ')
-	# details['language'] = parts[1]
 
 	print(details['type'] + ' ' + details['file'])
 	return details
@@ -75,11 +67,16 @@ def listen () :
 
 		request = getRequest(clientSocket)
 
-		details = parseRequest(request)
+		try :
 
-		response = getContent(details)
+			details = parseRequest(request)
 
-		returnResponse(response, clientSocket)
+			response = getContent(details)
+
+			returnResponse(response, clientSocket)
+
+		except :
+			print("Server only accepts GET requests")
 
 		#close the connection
 		clientSocket.close()
