@@ -21,12 +21,15 @@ def openFile (fileName) :
 def getRequest (socket) :
 	# receive the request
 	request = socket.recv(2048)
-	if request[0] == 47 :
-		request = request[1:]
 	print(request)
 	return request
 
-def processRequest (request) :
+def parseRequest (request) :
+	# get/post
+	# file
+	pass
+
+def getContent (request) :
 	# process the request
 	content = openFile(request)
 	return content
@@ -42,7 +45,7 @@ def listen () :
 
 		request = getRequest(clientSocket)
 
-		response = processRequest(request)
+		response = getContent(request)
 
 		returnResponse(response, clientSocket)
 
