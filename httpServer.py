@@ -57,7 +57,18 @@ def getContent (details) :
 	return content
 
 def getResponse (content) :
-	return content
+	response  = "HTTP/1.1 200 OK\r\n"
+	response += "Date: Sun, 26 Sep 2010 20:09:20 GMT\r\n"
+	response += "Server: Apache/2.0.52 (CentOS)\r\n"
+	response += "Last-Modified: Tue, 30 Oct 2007 17:00:02 GMT\r\n"
+	response += "Accept-Ranges: bytes\r\n"
+	response += "Content-Length:" + str(len(content)) + "\r\n"
+	response += "Keep-Alive: timeout=10, max=100\r\n"
+	response += "Connection: Keep-Alive\r\n"
+	response += "Content-Type: text/html; charset=ISO-8859-1\r\n"
+	response += "\r\n"
+	response += content
+	return response
 
 def returnResponse (response, socket) :
 	# return the result to the client
@@ -93,7 +104,7 @@ port = getPort()
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
 # activate socket
-serverSocket.bind(('', port))
+serverSocket.bind(('localhost', port))
 serverSocket.listen(1)
 
 listen()
