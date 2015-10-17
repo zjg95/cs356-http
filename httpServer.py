@@ -12,6 +12,8 @@ MAX_FILE_SIZE = 8192
 endl = "\r\n"
 codeDict = {
 	200 : "200 OK",
+	400 : "400 Bad Request",
+	403 : "403 Forbidden",
 	404 : "404 Not Found",
 	505 : "505 HTTP Version Not Supported"
 }
@@ -145,8 +147,7 @@ def listen () :
 
 			except NotFoundException :
 				print("File not found")
-				responseDict["content"] = codeDict[404]
-				responseDict["code"] = codeDict[404]
+				responseDict["content"] = responseDict["code"] = codeDict[404]
 				responseDict["modified"] = ""
 
 			rawResponse = getResponse(responseDict)
