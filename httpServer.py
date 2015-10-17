@@ -6,7 +6,7 @@ import time
 path = os.path.dirname(os.path.abspath(__file__))
 
 serverName = "TastyTTP"
-serverVersion = "1.0"
+serverVersion = "1.1"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
@@ -15,6 +15,7 @@ codeDict = {
 	400 : "400 Bad Request",
 	403 : "403 Forbidden",
 	404 : "404 Not Found",
+	415 : "415 Unsupported Media Type",
 	505 : "505 HTTP Version Not Supported"
 }
 
@@ -55,14 +56,11 @@ def getPort () :
 	return int(argv[1])
 
 def openFile (fileName) :
-	# Supported files:
-	# HTML (.html or .htm), text (.txt), or JPEG (.jpg or .jpeg)
 	try:
 		inputfile = open (fileName, 'r')
 	except IOError:
 		raise NotFoundException
-	contents = inputfile.read()
-	return contents
+	return inputfile
 
 def getRequest (socket) :
 	# receive the request
@@ -98,10 +96,15 @@ def parseRequest (request) :
 	print(details['type'] + ' ' + details['file'])
 	return details
 
-def getContent (details) :
-	# process the request
-	content = openFile(details['file'])
-	return content
+def getFileContents (fileName) :
+	inputFile = openFile(fileName)
+	try :
+		fileContents = inputFile.read()
+	except UnicodeDecodeError :
+		# Supported files:
+		# HTML (.html or .htm), text (.txt), or JPEG (.jpg or .jpeg)
+		raise FileTypeNotSupportedException
+	return fileContents
 
 def getResponse (details) :
 	response  = ""
@@ -132,39 +135,55 @@ def listen () :
 		# obtain the request through the wire
 		rawRequest = getRequest(clientSocket)
 
+		# dictionary to hold the server's response
 		responseDict = {
 			"HTTP" : "HTTP/1.1"
 		}
 
 		try :
 
-			# parse the request
+			# dictionary to hold client's request
 			requestDict = parseRequest(rawRequest)
 
 			try :
 
-				responseDict["content"] = getContent(requestDict)
+				# extract the contents of the file
+				responseDict["content"] = getFileContents(requestDict["file"])
+				# exception thrown if unsuccessful
+				print("200 OK")
 				responseDict["code"] = codeDict[200]
+				# obtain the time last modified
 				responseDict["modified"] = getModifiedTimeString(requestDict["file"])
 
 			except NotFoundException :
-				print("File not found")
+				# file not found
+				print("404 File not found")
 				responseDict["content"] = responseDict["code"] = codeDict[404]
 
+			except FileTypeNotSupportedException :
+				# file not found
+				print("415 Unsupported media type")
+				responseDict["content"] = responseDict["code"] = codeDict[415]
+
 		except NonGetRequestException :
+			# not a GET request
 			print("403 Server only accepts GET requests")
 			responseDict["content"] = responseDict["code"] = codeDict[403]
 
 		except BadRequestException :
+			# invalid syntax or nonsense request
 			print("400 Bad request")
 			responseDict["content"] = responseDict["code"] = codeDict[400]
 
 		except HTTPVersionNotSupportedException :
+			# unsupported version of HTTP
 			print("505 Server only supports HTTP/1.1")
 			responseDict["content"] = responseDict["code"] = codeDict[505]
 
+		# add the headers to the response
 		rawResponse = getResponse(responseDict)
 
+		# send the response over the wire
 		returnResponse(rawResponse, clientSocket)
 
 		#close the connection
