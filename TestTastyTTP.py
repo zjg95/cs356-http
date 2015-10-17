@@ -54,7 +54,7 @@ class TestTastyTTP (TestCase) :
 
     def test_code_200_1 (self) :
 
-        request = "GET /index.html HTTP/1.1"
+        request = "GET /testfiles/index.html HTTP/1.1"
 
         responseDict = getResponse(request)
 
