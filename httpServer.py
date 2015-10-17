@@ -81,8 +81,6 @@ def parseRequest (request) :
 		# components of line
 		parts = lines[0].split(' ')
 		details['type'] = parts[0].upper()
-		if details['type'] != "GET" :
-			raise NonGetRequestException
 		if '/' == parts[1][0] :
 			parts[1] = path + parts[1]
 		else :
@@ -91,6 +89,8 @@ def parseRequest (request) :
 		details['HTTP'] = parts[2]
 		if details['HTTP'] != "HTTP/1.1" :
 			raise HTTPVersionNotSupportedException
+		if details['type'] != "GET" :
+			raise NonGetRequestException
 
 	except IndexError :
 		raise BadRequestException
@@ -108,7 +108,8 @@ def getResponse (details) :
 	response += details["HTTP"] + " " + details["code"] + endl
 	response += "Date: " + getCurrentTimeString() + endl
 	response += "Server: " + serverName + "/" + serverVersion + " (" + os.name + ")" + endl
-	response += "Last-Modified: " + details["modified"] + endl
+	if details["code"] == codeDict[200] :
+		response += "Last-Modified: " + details["modified"] + endl
 	response += "Accept-Ranges: bytes" + endl
 	response += "Content-Length: " + str(len(details["content"])) + endl
 	response += "Keep-Alive: timeout=10, max=100" + endl
@@ -131,13 +132,14 @@ def listen () :
 		# obtain the request through the wire
 		rawRequest = getRequest(clientSocket)
 
+		responseDict = {
+			"HTTP" : "HTTP/1.1"
+		}
+
 		try :
 
 			# parse the request
 			requestDict = parseRequest(rawRequest)
-
-			responseDict = {}
-			responseDict["HTTP"] = requestDict["HTTP"]
 
 			try :
 
@@ -148,20 +150,22 @@ def listen () :
 			except NotFoundException :
 				print("File not found")
 				responseDict["content"] = responseDict["code"] = codeDict[404]
-				responseDict["modified"] = ""
-
-			rawResponse = getResponse(responseDict)
-
-			returnResponse(rawResponse, clientSocket)
 
 		except NonGetRequestException :
-			print("Server only accepts GET requests")
+			print("403 Server only accepts GET requests")
+			responseDict["content"] = responseDict["code"] = codeDict[403]
 
 		except BadRequestException :
-			print("Bad request")
+			print("400 Bad request")
+			responseDict["content"] = responseDict["code"] = codeDict[400]
 
 		except HTTPVersionNotSupportedException :
-			print("Server only supports HTTP/1.1")
+			print("505 Server only supports HTTP/1.1")
+			responseDict["content"] = responseDict["code"] = codeDict[505]
+
+		rawResponse = getResponse(responseDict)
+
+		returnResponse(rawResponse, clientSocket)
 
 		#close the connection
 		clientSocket.close()
