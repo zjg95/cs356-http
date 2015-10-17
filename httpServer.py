@@ -1,13 +1,20 @@
 from socket	import *
 from sys import argv, exit
 import os
+import time
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-version = 0.3
+serverName = "TastyTTP"
+serverVersion = "1.0"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
+codeDict = {
+	200 : "200 OK",
+	404 : "404 Not Found",
+	505 : "505 HTTP Version Not Supported"
+}
 
 class NonGetRequestException (Exception) :
     pass
@@ -23,6 +30,21 @@ class FileTypeNotSupportedException (Exception) :
 
 class HTTPVersionNotSupportedException (Exception) :
 	pass
+
+def getCurrentTime () :
+	return time.gmtime()
+
+def getCurrentTimeString () :
+	tnow = getCurrentTime()
+	return time.strftime('%a, %d %b %Y %H:%M:%S GMT', tnow)
+
+def getModifiedTime (fileName) :
+	modtime = os.path.getmtime(fileName)
+	return time.gmtime(modtime)
+
+def getModifiedTimeString (fileName) :
+	gmtime = getModifiedTime(fileName)
+	return time.strftime('%a, %d %b %Y %H:%M:%S GMT', gmtime)
 
 def getPort () :
 	if len(argv) != 2 :
@@ -64,14 +86,14 @@ def parseRequest (request) :
 		else :
 			parts[1] = path + '/' + parts[1]
 		details['file'] = parts[1]
-		details['http'] = parts[2]
-		if details['http'] != "HTTP/1.1" :
+		details['HTTP'] = parts[2]
+		if details['HTTP'] != "HTTP/1.1" :
 			raise HTTPVersionNotSupportedException
 
 	except IndexError :
 		raise BadRequestException
 
-	# print(details['type'] + ' ' + details['file'])
+	print(details['type'] + ' ' + details['file'])
 	return details
 
 def getContent (details) :
@@ -82,14 +104,14 @@ def getContent (details) :
 def getResponse (details) :
 	response  = ""
 	response += details["HTTP"] + " " + details["code"] + endl
-	response += "Date: Sun, 26 Sep 2010 20:09:20 GMT\r\n"
-	response += "Server: Apache/2.0.52 (CentOS)\r\n"
-	response += "Last-Modified: Tue, 30 Oct 2007 17:00:02 GMT\r\n"
-	response += "Accept-Ranges: bytes\r\n"
+	response += "Date: " + getCurrentTimeString() + endl
+	response += "Server: " + serverName + "/" + serverVersion + " (" + os.name + ")" + endl
+	response += "Last-Modified: " + details["modified"] + endl
+	response += "Accept-Ranges: bytes" + endl
 	response += "Content-Length: " + str(len(details["content"])) + endl
-	response += "Keep-Alive: timeout=10, max=100\r\n"
-	response += "Connection: Keep-Alive\r\n"
-	response += "Content-Type: text/html; charset=ISO-8859-1\r\n"
+	response += "Keep-Alive: timeout=10, max=100" + endl
+	response += "Connection: Keep-Alive" + endl
+	response += "Content-Type: text/html; charset=ISO-8859-1" + endl
 	response += endl
 	response += details["content"]
 	return response
@@ -105,29 +127,31 @@ def listen () :
 		clientSocket, addr = serverSocket.accept()
 
 		# obtain the request through the wire
-		request = getRequest(clientSocket)
+		rawRequest = getRequest(clientSocket)
 
 		try :
 
 			# parse the request
-			requestDetails = parseRequest(request)
+			requestDict = parseRequest(rawRequest)
 
 			responseDict = {}
-			responseDict["HTTP"] = "HTTP/1.1"
+			responseDict["HTTP"] = requestDict["HTTP"]
 
 			try :
 
-				responseDict["content"] = getContent(requestDetails)
-				responseDict["code"] = "200 OK"
+				responseDict["content"] = getContent(requestDict)
+				responseDict["code"] = codeDict[200]
+				responseDict["modified"] = getModifiedTimeString(requestDict["file"])
 
 			except NotFoundException :
 				print("File not found")
-				responseDict["content"] = "404 Not Found"
-				responseDict["code"] = "404 Not Found"
+				responseDict["content"] = codeDict[404]
+				responseDict["code"] = codeDict[404]
+				responseDict["modified"] = ""
 
-			response = getResponse(responseDict)
+			rawResponse = getResponse(responseDict)
 
-			returnResponse(response, clientSocket)
+			returnResponse(rawResponse, clientSocket)
 
 		except NonGetRequestException :
 			print("Server only accepts GET requests")
@@ -141,7 +165,7 @@ def listen () :
 		#close the connection
 		clientSocket.close()
 
-print('TastyTTP v' + str(version))
+print(serverName + "/" + serverVersion)
 
 # define port number and socket
 port = getPort()
