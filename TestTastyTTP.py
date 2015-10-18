@@ -45,8 +45,15 @@ def getResponse (request) :
 
     clientSocket.send(request.encode())
     modifiedSentence = clientSocket.recv(2048)
+    try :
 
-    response = modifiedSentence.decode()
+        response = modifiedSentence.decode()
+
+    except UnicodeDecodeError :
+        response = ""
+        for byte in modifiedSentence :
+            response += chr(byte)
+
     clientSocket.close()
 
     return parseResponse(response)
