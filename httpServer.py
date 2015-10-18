@@ -1,15 +1,35 @@
+#!/usr/bin/env python3
+
+# -------------------------------
+# cs356-http/httpServer.py
+# Copyright (C) 2015
+# Zachary J. Goodman
+# -------------------------------
+
+# -------
+# imports
+# -------
+
 from socket	import *
 from sys import argv, exit
 import os
 import time
 
-path = os.path.dirname(os.path.abspath(__file__))
+# ----------------
+# server meta data
+# ----------------
 
+path = os.path.dirname(os.path.abspath(__file__))
 serverName = "TastyTTP"
 serverVersion = "1.1"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
+
+# ----------
+# HTTP codes
+# ----------
+
 codeDict = {
 	200 : "200 OK",
 	400 : "400 Bad Request",
@@ -18,6 +38,10 @@ codeDict = {
 	415 : "415 Unsupported Media Type",
 	505 : "505 HTTP Version Not Supported"
 }
+
+# -----------------
+# exception classes
+# -----------------
 
 class NonGetRequestException (Exception) :
     pass
@@ -34,6 +58,10 @@ class FileTypeNotSupportedException (Exception) :
 class HTTPVersionNotSupportedException (Exception) :
 	pass
 
+# ------------
+# time methods
+# ------------
+
 def getCurrentTime () :
 	return time.gmtime()
 
@@ -49,18 +77,19 @@ def getModifiedTimeString (fileName) :
 	gmtime = getModifiedTime(fileName)
 	return time.strftime('%a, %d %b %Y %H:%M:%S GMT', gmtime)
 
+# --------
+# get port
+# --------
+
 def getPort () :
 	if len(argv) != 2 :
 		print("Usage requires exactly one command line argument! python3 httpServer <port>")
 		exit()
 	return int(argv[1])
 
-def openFile (fileName) :
-	try:
-		inputfile = open (fileName, 'r')
-	except IOError:
-		raise NotFoundException
-	return inputfile
+# ---------------
+# request methods
+# ---------------
 
 def getRequest (socket) :
 	# receive the request
@@ -78,23 +107,34 @@ def parseRequest (request) :
 		lines = request.split('\r\n')
 		# components of line
 		parts = lines[0].split(' ')
-		details['type'] = parts[0].upper()
+		details["method"] = parts[0].upper()
 		if '/' == parts[1][0] :
 			parts[1] = path + parts[1]
 		else :
 			parts[1] = path + '/' + parts[1]
-		details['file'] = parts[1]
-		details['HTTP'] = parts[2]
-		if details['HTTP'] != "HTTP/1.1" :
+		details["url"] = parts[1]
+		details["version"] = parts[2]
+		if details["version"] != "HTTP/1.1" :
 			raise HTTPVersionNotSupportedException
-		if details['type'] != "GET" :
+		if details["method"] != "GET" :
 			raise NonGetRequestException
 
 	except IndexError :
 		raise BadRequestException
 
-	print(details['type'] + ' ' + details['file'])
+	print(details["method"] + ' ' + details["url"])
 	return details
+
+# ------------
+# file methods
+# ------------
+
+def openFile (fileName) :
+	try:
+		inputfile = open (fileName, 'r')
+	except IOError:
+		raise NotFoundException
+	return inputfile
 
 def getFileContents (fileName) :
 	inputFile = openFile(fileName)
@@ -103,12 +143,18 @@ def getFileContents (fileName) :
 	except UnicodeDecodeError :
 		# Supported files:
 		# HTML (.html or .htm), text (.txt), or JPEG (.jpg or .jpeg)
+		if ".jpeg" in fileName :
+			pass
 		raise FileTypeNotSupportedException
 	return fileContents
 
+# ----------------
+# response methods
+# ----------------
+
 def getResponse (details) :
 	response  = ""
-	response += details["HTTP"] + " " + details["code"] + endl
+	response += details["version"] + " " + details["code"] + endl
 	response += "Date: " + getCurrentTimeString() + endl
 	response += "Server: " + serverName + "/" + serverVersion + " (" + os.name + ")" + endl
 	if details["code"] == codeDict[200] :
@@ -117,7 +163,7 @@ def getResponse (details) :
 	response += "Content-Length: " + str(len(details["content"])) + endl
 	response += "Keep-Alive: timeout=10, max=100" + endl
 	response += "Connection: Keep-Alive" + endl
-	response += "Content-Type: text/html; charset=ISO-8859-1" + endl
+	response += "Content-Type: " + details["content-type"] + endl
 	response += endl
 	response += details["content"]
 	return response
@@ -125,6 +171,10 @@ def getResponse (details) :
 def returnResponse (response, socket) :
 	# return the result to the client
 	socket.send(response.encode())
+
+# ------
+# listen
+# ------
 
 def listen () :
 	while listening:
@@ -137,7 +187,8 @@ def listen () :
 
 		# dictionary to hold the server's response
 		responseDict = {
-			"HTTP" : "HTTP/1.1"
+			"version" : "HTTP/1.1",
+			"content-type" : "text/html"
 		}
 
 		try :
@@ -148,12 +199,12 @@ def listen () :
 			try :
 
 				# extract the contents of the file
-				responseDict["content"] = getFileContents(requestDict["file"])
+				responseDict["content"] = getFileContents(requestDict["url"])
 				# exception thrown if unsuccessful
 				print("200 OK")
 				responseDict["code"] = codeDict[200]
 				# obtain the time last modified
-				responseDict["modified"] = getModifiedTimeString(requestDict["file"])
+				responseDict["modified"] = getModifiedTimeString(requestDict["url"])
 
 			except NotFoundException :
 				# file not found
@@ -188,6 +239,10 @@ def listen () :
 
 		#close the connection
 		clientSocket.close()
+
+# ----
+# main
+# ----
 
 print(serverName + "/" + serverVersion)
 

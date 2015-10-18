@@ -69,6 +69,14 @@ class TestTastyTTP (TestCase) :
 
         self.assertEqual('200', responseDict['code'])
 
+    def test_code_200_2 (self) :
+
+        request = "GET /testfiles/tiny.jpeg HTTP/1.1"
+
+        responseDict = getResponse(request)
+
+        self.assertEqual('200', responseDict['code'])
+
     # ---
     # 400
     # ---
