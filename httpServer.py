@@ -129,22 +129,24 @@ def parseRequest (request) :
 # file methods
 # ------------
 
-def openFile (fileName) :
+def openFile (fileName, openType) :
 	try:
-		inputfile = open (fileName, 'r')
+		inputfile = open(fileName, openType)
 	except IOError:
 		raise NotFoundException
 	return inputfile
 
-def getFileContents (fileName) :
-	inputFile = openFile(fileName)
+def openBinaryFile (fileName) :
+	# Supported files: JPEG (.jpg or .jpeg)
+	inputFile = openFile(fileName, "rb")
+	return inputFile.read()
+
+def openTextFile (fileName) :
+	# Supported files: HTML (.html or .htm), text (.txt)
+	inputFile = openFile(fileName, "r")
 	try :
 		fileContents = inputFile.read()
 	except UnicodeDecodeError :
-		# Supported files:
-		# HTML (.html or .htm), text (.txt), or JPEG (.jpg or .jpeg)
-		if ".jpeg" in fileName :
-			pass
 		raise FileTypeNotSupportedException
 	return fileContents
 
@@ -153,6 +155,8 @@ def getFileContents (fileName) :
 # ----------------
 
 def getResponse (details) :
+	# are we sending an image
+	image = (False, True)[details["content-type"] == "image/jpeg"]
 	response  = ""
 	response += details["version"] + " " + details["code"] + endl
 	response += "Date: " + getCurrentTimeString() + endl
@@ -165,12 +169,19 @@ def getResponse (details) :
 	response += "Connection: Keep-Alive" + endl
 	response += "Content-Type: " + details["content-type"] + endl
 	response += endl
+	if image :
+		# encode the response, excluding the content
+		response = response.encode()
+	# add the content
 	response += details["content"]
+	if not image :
+		# encode the response, including the content
+		response = response.encode()
 	return response
 
 def returnResponse (response, socket) :
 	# return the result to the client
-	socket.send(response.encode())
+	socket.send(response)
 
 # ------
 # listen
@@ -199,7 +210,12 @@ def listen () :
 			try :
 
 				# extract the contents of the file
-				responseDict["content"] = getFileContents(requestDict["url"])
+				fileName = requestDict["url"]
+				if ".jpeg" in fileName :
+					responseDict["content"] = openBinaryFile(fileName)
+					responseDict["content-type"] = "image/jpeg"
+				else :
+					responseDict["content"] = openTextFile(fileName)
 				# exception thrown if unsuccessful
 				print("200 OK")
 				responseDict["code"] = codeDict[200]
