@@ -21,7 +21,7 @@ import time
 
 path = os.path.dirname(os.path.abspath(__file__))
 serverName = "TastyTTP"
-serverVersion = "1.1"
+serverVersion = "2.0"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
@@ -33,9 +33,10 @@ endl = "\r\n"
 codeDict = {
 	200 : "200 OK",
 	400 : "400 Bad Request",
-	403 : "403 Forbidden",
 	404 : "404 Not Found",
+	405 : "405 Method Not Allowed",
 	415 : "415 Unsupported Media Type",
+	418 : "418 I'm a teapot",
 	505 : "505 HTTP Version Not Supported"
 }
 
@@ -56,6 +57,9 @@ class FileTypeNotSupportedException (Exception) :
 	pass
 
 class HTTPVersionNotSupportedException (Exception) :
+	pass
+
+class CoffeePotException (Exception) :
 	pass
 
 # ------------
@@ -113,7 +117,9 @@ def parseRequest (request) :
 		else :
 			parts[1] = path + '/' + parts[1]
 		details["url"] = parts[1]
-		details["version"] = parts[2]
+		details["version"] = parts[2].upper()
+		if details["version"] == "HTCPCP/1.0" and details["method"] == "BREW" :
+			raise CoffeePotException
 		if details["version"] != "HTTP/1.1" :
 			raise HTTPVersionNotSupportedException
 		if details["method"] != "GET" :
@@ -156,7 +162,7 @@ def getFileType (fileName) :
 		raise NotFoundException
 	if len(parts) == 1 :
 		return "txt"
-	return parts[len(parts) - 1]
+	return parts[len(parts) - 1].lower()
 
 # ----------------
 # response methods
@@ -244,8 +250,8 @@ def listen () :
 
 		except NonGetRequestException :
 			# not a GET request
-			print("403 Server only accepts GET requests")
-			responseDict["content"] = responseDict["code"] = codeDict[403]
+			print("405 Server only accepts GET requests")
+			responseDict["content"] = responseDict["code"] = codeDict[405]
 
 		except BadRequestException :
 			# invalid syntax or nonsense request
@@ -256,6 +262,13 @@ def listen () :
 			# unsupported version of HTTP
 			print("505 Server only supports HTTP/1.1")
 			responseDict["content"] = responseDict["code"] = codeDict[505]
+
+		except CoffeePotException :
+			# BREW request
+			print("418 I'm a teapot")
+			responseDict["content"] = responseDict["code"] = codeDict[418]
+			responseDict["version"] = "HTCPCP/1.0"
+			responseDict["content-type"] = "application/coffee-pot-command"
 
 		# add the headers to the response
 		rawResponse = getResponse(responseDict)
@@ -277,7 +290,7 @@ port = getPort()
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
 # activate socket
-serverSocket.bind(('', port))
+serverSocket.bind(('localhost', port))
 serverSocket.listen(1)
 
 listen()

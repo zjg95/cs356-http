@@ -141,24 +141,24 @@ class TestTastyTTP (TestCase) :
         self.assertEqual('400', responseDict['code'])
 
     # ---
-    # 403
+    # 405
     # ---
 
-    def test_code_403_1 (self) :
+    def test_code_405_1 (self) :
 
         request = "POST / HTTP/1.1"
 
         responseDict = getResponse(request)
 
-        self.assertEqual('403', responseDict['code'])
+        self.assertEqual('405', responseDict['code'])
 
-    def test_code_403_2 (self) :
+    def test_code_405_2 (self) :
 
         request = "HEAD /NonexistentFile HTTP/1.1"
 
         responseDict = getResponse(request)
 
-        self.assertEqual('403', responseDict['code'])
+        self.assertEqual('405', responseDict['code'])
 
     # ---
     # 404
@@ -187,6 +187,18 @@ class TestTastyTTP (TestCase) :
         responseDict = getResponse(request)
 
         self.assertEqual('404', responseDict['code'])
+
+    # ---
+    # 418
+    # ---
+
+    def test_code_418_1 (self) :
+
+        request = "BREW / HTCPCP/1.0"
+
+        responseDict = getResponse(request)
+
+        self.assertEqual('418', responseDict['code'])
 
     # ---
     # 505
@@ -234,6 +246,14 @@ class TestTastyTTP (TestCase) :
         responseDict = getResponse(request)
 
         self.assertEqual('HTTP/1.1', responseDict['version'])
+
+    def test_version_4 (self) :
+
+        request = "BREW / HTCPCP/1.0"
+
+        responseDict = getResponse(request)
+
+        self.assertEqual('HTCPCP/1.0', responseDict['version'])
 
     # ----
     # date
