@@ -32,6 +32,7 @@ endl = "\r\n"
 
 codeDict = {
 	200 : "200 OK",
+	304 : "304 Not Modified",
 	400 : "400 Bad Request",
 	404 : "404 Not Found",
 	405 : "405 Method Not Allowed",
@@ -60,6 +61,9 @@ class HTTPVersionNotSupportedException (Exception) :
 	pass
 
 class CoffeePotException (Exception) :
+	pass
+
+class NotModifiedException (Exception) :
 	pass
 
 # ------------
@@ -105,6 +109,7 @@ def getRequest (socket) :
 def parseRequest (request) :
 	# dictionary to hold values
 	details = {}
+		# raise NotModifiedException
 	try :
 
 		# list of lines in request
@@ -125,9 +130,16 @@ def parseRequest (request) :
 		if details["method"] != "GET" :
 			raise NonGetRequestException
 
+		for line in lines :
+			if "If-Modified-Since:" in line :
+				trash, date = line.split("If-Modified-Since: ")
+				details["if-modified-since"] = date
+				break
+
 	except IndexError :
 		raise BadRequestException
 
+	# print(details["method"] + " " + details["url"] + " " + details["version"])
 	return details
 
 # ------------
@@ -243,6 +255,10 @@ def listen () :
 				# file not found
 				print(codeDict[415])
 				responseDict["content"] = responseDict["code"] = codeDict[415]
+
+		except NotModifiedException :
+			print(codeDict[304])
+			responseDict["content"] = responseDict["code"] = codeDict[304]
 
 		except NonGetRequestException :
 			# not a GET request
