@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # -------------------------------
-# cs356-http/httpServer.py
+# cs356-http/server-zjg95.py
 # Copyright (C) 2015
 # Zachary J. Goodman
 # -------------------------------
