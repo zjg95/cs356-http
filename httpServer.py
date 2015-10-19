@@ -21,7 +21,7 @@ import time
 
 path = os.path.dirname(os.path.abspath(__file__))
 serverName = "TastyTTP"
-serverVersion = "2.0"
+serverVersion = "2.2"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
@@ -128,7 +128,6 @@ def parseRequest (request) :
 	except IndexError :
 		raise BadRequestException
 
-	print(details["method"] + ' ' + details["url"])
 	return details
 
 # ------------
@@ -169,7 +168,7 @@ def getFileType (fileName) :
 # ----------------
 
 def getResponse (details) :
-	# are we sending an image
+	# check if we are sending an image
 	image = (False, True)[details["content-type"] == "image/jpeg"]
 	response  = ""
 	response += details["version"] + " " + details["code"] + endl
@@ -177,10 +176,7 @@ def getResponse (details) :
 	response += "Server: " + serverName + "/" + serverVersion + " (" + os.name + ")" + endl
 	if details["code"] == codeDict[200] :
 		response += "Last-Modified: " + details["modified"] + endl
-	response += "Accept-Ranges: bytes" + endl
 	response += "Content-Length: " + str(len(details["content"])) + endl
-	response += "Keep-Alive: timeout=10, max=100" + endl
-	response += "Connection: Keep-Alive" + endl
 	response += "Content-Type: " + details["content-type"] + endl
 	response += endl
 	if image :
@@ -233,39 +229,39 @@ def listen () :
 					responseDict["content"] = openTextFile(fileName)
 					responseDict["content-type"] = "text/" + fileType
 				# exception thrown if unsuccessful
-				print("200 OK")
+				print(codeDict[200])
 				responseDict["code"] = codeDict[200]
 				# obtain the time last modified
 				responseDict["modified"] = getModifiedTimeString(requestDict["url"])
 
 			except NotFoundException :
 				# file not found
-				print("404 File not found")
+				print(codeDict[404])
 				responseDict["content"] = responseDict["code"] = codeDict[404]
 
 			except FileTypeNotSupportedException :
 				# file not found
-				print("415 Unsupported media type")
+				print(codeDict[415])
 				responseDict["content"] = responseDict["code"] = codeDict[415]
 
 		except NonGetRequestException :
 			# not a GET request
-			print("405 Server only accepts GET requests")
+			print(codeDict[405])
 			responseDict["content"] = responseDict["code"] = codeDict[405]
 
 		except BadRequestException :
 			# invalid syntax or nonsense request
-			print("400 Bad request")
+			print(codeDict[400])
 			responseDict["content"] = responseDict["code"] = codeDict[400]
 
 		except HTTPVersionNotSupportedException :
 			# unsupported version of HTTP
-			print("505 Server only supports HTTP/1.1")
+			print(codeDict[505])
 			responseDict["content"] = responseDict["code"] = codeDict[505]
 
 		except CoffeePotException :
 			# BREW request
-			print("418 I'm a teapot")
+			print(codeDict[418])
 			responseDict["content"] = responseDict["code"] = codeDict[418]
 			responseDict["version"] = "HTCPCP/1.0"
 			responseDict["content-type"] = "application/coffee-pot-command"
