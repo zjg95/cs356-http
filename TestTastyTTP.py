@@ -61,7 +61,7 @@ def parseResponse (request) :
 
         details['last-modified'] = parts[1]
 
-        parts = lines[8].split('Content-Type: ')
+        parts = lines[5].split('Content-Type: ')
 
         details['content-type'] = parts[1]
 
