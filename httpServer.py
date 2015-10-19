@@ -277,7 +277,7 @@ port = getPort()
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
 # activate socket
-serverSocket.bind(('localhost', port))
+serverSocket.bind(('', port))
 serverSocket.listen(1)
 
 listen()
