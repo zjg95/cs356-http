@@ -263,8 +263,6 @@ def listen () :
 			# BREW request
 			print(codeDict[418])
 			responseDict["content"] = responseDict["code"] = codeDict[418]
-			responseDict["version"] = "HTCPCP/1.0"
-			responseDict["content-type"] = "application/coffee-pot-command"
 
 		# add the headers to the response
 		rawResponse = getResponse(responseDict)

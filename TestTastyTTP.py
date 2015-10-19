@@ -259,7 +259,7 @@ class TestTastyTTP (TestCase) :
 
         responseDict = getResponse(request)
 
-        self.assertEqual('HTCPCP/1.0', responseDict['version'])
+        self.assertEqual('HTTP/1.1', responseDict['version'])
 
     # ----
     # date
@@ -332,15 +332,6 @@ class TestTastyTTP (TestCase) :
 
         self.assertEqual('200', responseDict['code'])
         self.assertEqual('image/jpeg', responseDict['content-type'])
-
-    def test_content_type_3 (self) :
-
-        request = "BREW / HTCPCP/1.0"
-
-        responseDict = getResponse(request)
-
-        self.assertEqual('418', responseDict['code'])
-        self.assertEqual('application/coffee-pot-command', responseDict['content-type'])
 
 # ----
 # main
