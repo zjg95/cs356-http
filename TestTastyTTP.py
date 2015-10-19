@@ -119,6 +119,18 @@ class TestTastyTTP (TestCase) :
         self.assertEqual('200', responseDict['code'])
 
     # ---
+    # 304
+    # ---
+
+    def test_code_304_1 (self) :
+
+        request = "GET /testfiles/index.html HTTP/1.1\r\nIf-Modified-Since: " + getCurrentTimeString()
+
+        responseDict = getResponse(request)
+
+        self.assertEqual('304', responseDict['code'])
+
+    # ---
     # 400
     # ---
 
