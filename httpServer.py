@@ -150,6 +150,14 @@ def openTextFile (fileName) :
 		raise FileTypeNotSupportedException
 	return fileContents
 
+def getFileType (fileName) :
+	parts = fileName.split('.')
+	if len(parts) == 0 :
+		raise NotFoundException
+	if len(parts) == 1 :
+		return "txt"
+	return parts[len(parts) - 1]
+
 # ----------------
 # response methods
 # ----------------
@@ -211,11 +219,13 @@ def listen () :
 
 				# extract the contents of the file
 				fileName = requestDict["url"]
-				if ".jpeg" in fileName :
+				fileType = getFileType(fileName)
+				if fileType == "jpeg" or fileType == "jpg" :
 					responseDict["content"] = openBinaryFile(fileName)
-					responseDict["content-type"] = "image/jpeg"
+					responseDict["content-type"] = "image/" + fileType
 				else :
 					responseDict["content"] = openTextFile(fileName)
+					responseDict["content-type"] = "text/" + fileType
 				# exception thrown if unsuccessful
 				print("200 OK")
 				responseDict["code"] = codeDict[200]
