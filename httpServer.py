@@ -118,7 +118,7 @@ def parseRequest (request) :
 			parts[1] = path + '/' + parts[1]
 		details["url"] = parts[1]
 		details["version"] = parts[2].upper()
-		if details["version"] == "HTCPCP/1.0" and details["method"] == "BREW" :
+		if details["method"] == "BREW" :
 			raise CoffeePotException
 		if details["version"] != "HTTP/1.1" :
 			raise HTTPVersionNotSupportedException
