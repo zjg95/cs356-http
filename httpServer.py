@@ -279,7 +279,9 @@ def listen () :
 # main
 # ----
 
+print("------------")
 print(serverName + "/" + serverVersion)
+print("------------")
 
 # define port number and socket
 port = getPort()
