@@ -21,10 +21,16 @@ import time
 
 path = os.path.dirname(os.path.abspath(__file__))
 serverName = "TastyTTP"
-serverVersion = "2.2"
+serverVersion = "2.5"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
+
+months = {
+	"Jan" : 1, "Feb" : 2, "Mar" : 3, "Apr" : 4,
+	"May" : 5, "Jun" : 6, "Jul" : 7, "Aug" : 8,
+	"Sep" : 9, "Oct" : 10, "Nov" : 11, "Dec" : 12
+}
 
 # ----------
 # HTTP codes
@@ -84,6 +90,43 @@ def getModifiedTime (fileName) :
 def getModifiedTimeString (fileName) :
 	gmtime = getModifiedTime(fileName)
 	return time.strftime('%a, %d %b %Y %H:%M:%S GMT', gmtime)
+
+def timeStringDict (timeString) :
+	timeDict = {}
+	try :
+
+		# split the calendar time
+		timeList = timeString.split(' ')
+		timeDict["dayName"] = timeList[0][:1]
+		timeDict["day"] = int(timeList[1])
+		timeDict["month"] = months[timeList[2]]
+		timeDict["year"] = int(timeList[3])
+		timeDict["zone"] = timeList[5]
+		# split the clock time
+		timeList = timeList[4].split(':')
+		timeDict["hour"] = int(timeList[0])
+		timeDict["minute"] = int(timeList[1])
+		timeDict["second"] = int(timeList[2])
+
+	except IndexError :
+		raise BadRequestException
+
+	return timeDict
+
+def compareDateTo (date1, date2) :
+	if date1["year"] != date2["year"] :
+		return (1, -1)[date1["year"] < date2["year"]]
+	if date1["month"] != date2["month"] :
+		return (1, -1)[date1["month"] < date2["month"]]
+	if date1["day"] != date2["day"] :
+		return (1, -1)[date1["day"] < date2["day"]]
+	if date1["hour"] != date2["hour"] :
+		return (1, -1)[date1["hour"] < date2["hour"]]
+	if date1["minute"] != date2["minute"] :
+		return (1, -1)[date1["minute"] < date2["minute"]]
+	if date1["second"] != date2["second"] :
+		return (1, -1)[date1["second"] < date2["second"]]
+	return 0
 
 # --------
 # get port
@@ -233,6 +276,24 @@ def listen () :
 
 				# extract the contents of the file
 				fileName = requestDict["url"]
+
+				try :
+
+					# check if the file has been modified since the cached copy
+					cacheDate = timeStringDict(requestDict["if-modified-since"])
+					modDate = timeStringDict(getModifiedTimeString(fileName))
+
+					compare = compareDateTo(cacheDate, modDate)
+
+					if compare == 1 :
+						raise NotModifiedException
+
+				except KeyError :
+					pass
+
+				except FileNotFoundError :
+					raise NotFoundException
+
 				fileType = getFileType(fileName)
 				if fileType == "jpeg" or fileType == "jpg" :
 					responseDict["content"] = openBinaryFile(fileName)
