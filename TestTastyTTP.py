@@ -65,6 +65,12 @@ def parseResponse (request) :
 
         details['content-type'] = parts[1]
 
+    else :
+
+        parts = lines[4].split('Content-Type: ')
+
+        details['content-type'] = parts[1]
+
     return details
 
 def getResponse (request) :
@@ -326,6 +332,15 @@ class TestTastyTTP (TestCase) :
 
         self.assertEqual('200', responseDict['code'])
         self.assertEqual('image/jpeg', responseDict['content-type'])
+
+    def test_content_type_3 (self) :
+
+        request = "BREW / HTCPCP/1.0"
+
+        responseDict = getResponse(request)
+
+        self.assertEqual('418', responseDict['code'])
+        self.assertEqual('application/coffee-pot-command', responseDict['content-type'])
 
 # ----
 # main
