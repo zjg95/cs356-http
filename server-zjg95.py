@@ -21,7 +21,7 @@ import time
 
 path = os.path.dirname(os.path.abspath(__file__))
 serverName = "TastyTTP"
-serverVersion = "2.5"
+serverVersion = "2.6"
 listening = True
 MAX_FILE_SIZE = 8192
 endl = "\r\n"
@@ -231,6 +231,9 @@ def parseRequest (request) :
 			parts[1] = path + '/' + parts[1]
 		details["url"] = parts[1]
 		details["version"] = parts[2].upper()
+
+		print(details["method"] + " " + details["url"] + " " + details["version"])
+
 		if details["method"] == "BREW" :
 			raise CoffeePotException
 		if details["version"] != "HTTP/1.1" :
@@ -247,7 +250,6 @@ def parseRequest (request) :
 	except IndexError :
 		raise BadRequestException
 
-	# print(details["method"] + " " + details["url"] + " " + details["version"])
 	return details
 
 # ------------
@@ -456,22 +458,15 @@ def listen () :
 # main
 # ----
 
-def main () :
-	"""
-    main method, print server details and begin listening
-    """
-	print("------------")
-	print(serverName + "/" + serverVersion)
-	print("------------")
+print("------------")
+print(serverName + "/" + serverVersion)
+print("------------")
 
-	# define port number and socket
-	port = getPort()
-	serverSocket = socket(AF_INET, SOCK_STREAM)
+# define port number and socket
+port = getPort()
+serverSocket = socket(AF_INET, SOCK_STREAM)
 
-	# activate socket
-	serverSocket.bind(('', port))
-	serverSocket.listen(1)
-	listen()
-
-if __name__ == "__main__" :
-    main()
+# activate socket
+serverSocket.bind(('', port))
+serverSocket.listen(1)
+listen()
