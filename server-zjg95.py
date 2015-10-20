@@ -27,9 +27,6 @@ MAX_FILE_SIZE = 8192
 endl = "\r\n"
 
 months = {
-	"""
-    dictionary containing months of the year
-    """
 	"Jan" : 1, "Feb" : 2, "Mar" : 3, "Apr" : 4,
 	"May" : 5, "Jun" : 6, "Jul" : 7, "Aug" : 8,
 	"Sep" : 9, "Oct" : 10, "Nov" : 11, "Dec" : 12
@@ -40,9 +37,6 @@ months = {
 # ----------
 
 codeDict = {
-	"""
-    dictionary containing HTTP response codes
-    """
 	200 : "200 OK",
 	304 : "304 Not Modified",
 	400 : "400 Bad Request",
@@ -62,7 +56,7 @@ class NonGetRequestException (Exception) :
 	"""
     indicates the requested method was not GET
     """
-    pass
+	pass
 
 class NotFoundException (Exception) :
 	"""
@@ -462,16 +456,22 @@ def listen () :
 # main
 # ----
 
-print("------------")
-print(serverName + "/" + serverVersion)
-print("------------")
+def main () :
+	"""
+    main method, print server details and begin listening
+    """
+	print("------------")
+	print(serverName + "/" + serverVersion)
+	print("------------")
 
-# define port number and socket
-port = getPort()
-serverSocket = socket(AF_INET, SOCK_STREAM)
+	# define port number and socket
+	port = getPort()
+	serverSocket = socket(AF_INET, SOCK_STREAM)
 
-# activate socket
-serverSocket.bind(('', port))
-serverSocket.listen(1)
+	# activate socket
+	serverSocket.bind(('', port))
+	serverSocket.listen(1)
+	listen()
 
-listen()
+if __name__ == "__main__" :
+    main()
