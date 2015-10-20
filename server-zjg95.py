@@ -27,6 +27,9 @@ MAX_FILE_SIZE = 8192
 endl = "\r\n"
 
 months = {
+	"""
+    dictionary containing months of the year
+    """
 	"Jan" : 1, "Feb" : 2, "Mar" : 3, "Apr" : 4,
 	"May" : 5, "Jun" : 6, "Jul" : 7, "Aug" : 8,
 	"Sep" : 9, "Oct" : 10, "Nov" : 11, "Dec" : 12
@@ -37,6 +40,9 @@ months = {
 # ----------
 
 codeDict = {
+	"""
+    dictionary containing HTTP response codes
+    """
 	200 : "200 OK",
 	304 : "304 Not Modified",
 	400 : "400 Bad Request",
@@ -51,25 +57,47 @@ codeDict = {
 # exception classes
 # -----------------
 
+
 class NonGetRequestException (Exception) :
+	"""
+    indicates the requested method was not GET
+    """
     pass
 
 class NotFoundException (Exception) :
+	"""
+    indicates the requested file was not found
+    """
 	pass
 
 class BadRequestException (Exception) :
+	"""
+    indicates invalid HTTP syntax in the request
+    """
 	pass
 
 class FileTypeNotSupportedException (Exception) :
+	"""
+    indicates the requested file is unsupported
+    """
 	pass
 
 class HTTPVersionNotSupportedException (Exception) :
+	"""
+    indicates an unsupported version of HTTP in request
+    """
 	pass
 
 class CoffeePotException (Exception) :
+	"""
+    indicates BREW method in request
+    """
 	pass
 
 class NotModifiedException (Exception) :
+	"""
+    indicates file has not been modified
+    """
 	pass
 
 # ------------
@@ -77,21 +105,41 @@ class NotModifiedException (Exception) :
 # ------------
 
 def getCurrentTime () :
+	"""
+    return a time struct of the current time
+    """
 	return time.gmtime()
 
 def getCurrentTimeString () :
+	"""
+    return the current time (GMT) in the form of a string
+    """
 	tnow = getCurrentTime()
 	return time.strftime('%a, %d %b %Y %H:%M:%S GMT', tnow)
 
 def getModifiedTime (fileName) :
+	"""
+    fileName the name and path to the file
+    return a time struct representing the last modification of the file
+    """
 	modtime = os.path.getmtime(fileName)
 	return time.gmtime(modtime)
 
 def getModifiedTimeString (fileName) :
+	"""
+    fileName the name and path to the file
+    return the time a file was last modified (GMT) in the form of a string
+    """
 	gmtime = getModifiedTime(fileName)
 	return time.strftime('%a, %d %b %Y %H:%M:%S GMT', gmtime)
 
 def timeStringDict (timeString) :
+	"""
+    parse a string into a dictionary containing the time values
+    raises BadRequestException if the time cannot be parsed
+    timeString a string representation of a time (GMT)
+    return a dictionary
+    """
 	timeDict = {}
 	try :
 
@@ -114,6 +162,12 @@ def timeStringDict (timeString) :
 	return timeDict
 
 def compareDateTo (date1, date2) :
+	"""
+    compares two dates
+    date1 a dictionary containing the values of the first date
+    date2 a dictionary containing the values of the second date
+    return 0 if equal, -1 if date1 comes before date2, and 1 vice-versa
+    """
 	if date1["year"] != date2["year"] :
 		return (1, -1)[date1["year"] < date2["year"]]
 	if date1["month"] != date2["month"] :
@@ -133,6 +187,10 @@ def compareDateTo (date1, date2) :
 # --------
 
 def getPort () :
+	"""
+    parse the port number from the command line; if failure, terminate program
+    return an int value containing the port number
+    """
 	if len(argv) != 2 :
 		print("Usage requires exactly one command line argument! python3 httpServer <port>")
 		exit()
@@ -143,13 +201,26 @@ def getPort () :
 # ---------------
 
 def getRequest (socket) :
+	"""
+    receive bytes from a socket
+    socket the socket of the client
+    return a string containing the client's request
+    """
 	# receive the request
 	request = socket.recv(MAX_FILE_SIZE)
 	request = bytes.decode(request)
-	print(request)
 	return request
 
 def parseRequest (request) :
+	"""
+    parse the pieces of the request, store in a dictionary
+    request a string containing the client's request
+    raise HTTPVersionNotSupportedException if anything but HTTP/1.1 is received
+    raise NonGetRequestException if any method but GET is received
+    raise BadRequestException if proper HTTP syntax is not upheld in request
+    raise CoffeePotException if the BREW method is in the request
+    return a dictionary
+    """
 	# dictionary to hold values
 	details = {}
 		# raise NotModifiedException
@@ -190,6 +261,13 @@ def parseRequest (request) :
 # ------------
 
 def openFile (fileName, openType) :
+	"""
+    open a file
+    fileName the string name/path to the file
+    openType a string indicating what mode of open to use
+    raise NotFoundException if file does not exist
+    return the opened file
+    """
 	try:
 		inputfile = open(fileName, openType)
 	except IOError:
@@ -197,11 +275,22 @@ def openFile (fileName, openType) :
 	return inputfile
 
 def openBinaryFile (fileName) :
+	"""
+    open a file in binary mode
+    fileName the string name/path to the file
+    return the opened file
+    """
 	# Supported files: JPEG (.jpg or .jpeg)
 	inputFile = openFile(fileName, "rb")
 	return inputFile.read()
 
 def openTextFile (fileName) :
+	"""
+    open a text file
+    fileName the string name/path to the file
+    raise FileTypeNotSupportedException if contents cannot be extracted
+    return the opened file
+    """
 	# Supported files: HTML (.html or .htm), text (.txt)
 	inputFile = openFile(fileName, "r")
 	try :
@@ -211,6 +300,12 @@ def openTextFile (fileName) :
 	return fileContents
 
 def getFileType (fileName) :
+	"""
+    get the extension of the file
+    fileName the string name of the file
+    raise NotFoundException if file does not exist
+    return a string
+    """
 	parts = fileName.split('.')
 	if len(parts) == 0 :
 		raise NotFoundException
@@ -223,6 +318,11 @@ def getFileType (fileName) :
 # ----------------
 
 def getResponse (details) :
+	"""
+    create a string response containing the appropriate HTTP headers
+    details a dictionary containing the header data
+    return a string
+    """
 	# check if we are sending an image
 	image = (False, True)[details["content-type"] == "image/jpeg"]
 	response  = ""
@@ -245,6 +345,11 @@ def getResponse (details) :
 	return response
 
 def returnResponse (response, socket) :
+	"""
+    send bytes over a socket
+    response the bytes to send
+    socket the client socket to use
+    """
 	# return the result to the client
 	socket.send(response)
 
@@ -253,6 +358,9 @@ def returnResponse (response, socket) :
 # ------
 
 def listen () :
+	"""
+    listen for clients, accept the connection, handle the request, close the connection
+    """
 	while listening:
 
 		# accept the connection to a client
@@ -363,7 +471,7 @@ port = getPort()
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
 # activate socket
-serverSocket.bind(('localhost', port))
+serverSocket.bind(('', port))
 serverSocket.listen(1)
 
 listen()
